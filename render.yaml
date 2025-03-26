@@ -2,6 +2,7 @@ services:
   - type: web
     name: justice-backend
     env: node
+    plan: free  # ⚡ Free plan enable karein
     buildCommand: npm install
     startCommand: node index.js
     envVars:
