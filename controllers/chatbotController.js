@@ -13,7 +13,7 @@ exports.askQuestion = async (req, res) => {
         // ✅ Handle Simple Greetings
         const greetings = ["hi", "hello", "hey", "namaste", "salam"];
         if (greetings.includes(userQuestion)) {
-            return res.json({ results: [{ title: "नमस्ते! मैं आपकी कैसे मदद कर सकता हूँ?" }], source: 'greeting' });
+            return res.json({ results: [{ title: "Hello! How may I assist you today?" }], source: 'greeting' });
         }
 
         // ✅ Extract IPC Section Number
@@ -21,7 +21,7 @@ exports.askQuestion = async (req, res) => {
         const sectionNumber = sectionNumberMatch ? sectionNumberMatch[1] : null;
 
         if (!sectionNumber) {
-            return res.json({ results: [{ title: "❌ कृपया एक सही IPC धारा नंबर दर्ज करें।" }], source: 'fallback' });
+            return res.json({ results: [{ title: "❌ Please enter a valid IPC section number." }], source: 'fallback' });
         }
 
         console.log("🔹 Extracted Section Number:", sectionNumber);
@@ -32,7 +32,8 @@ exports.askQuestion = async (req, res) => {
             return res.json({
                 results: [{ 
                     title: `📜 IPC Section ${sectionNumber}`,
-                    description: ipcSection.description
+                    description: ipcSection.description,
+                    link: ipcSection.link // Added link to response
                 }],
                 source: 'json'
             });
@@ -42,16 +43,18 @@ exports.askQuestion = async (req, res) => {
         const apiResults = await fetchFromIndianKanoon(sectionNumber);
         if (apiResults && apiResults.length > 0) {
             const formattedResults = apiResults.map(result => ({
-                title: `📜 <a href="${result.link}" target="_blank">${result.title}</a>`
+                title: `📜 IPC Section ${sectionNumber}`,
+                description: result.description,
+                link: result.link
             }));
             return res.json({ results: formattedResults, source: 'api' });
         }
 
         // ✅ If nothing found
-        return res.json({ results: [{ title: `❌ धारा ${sectionNumber} से संबंधित कोई जानकारी नहीं मिली।` }], source: 'not_found' });
+        return res.json({ results: [{ title: `❌ No information found for Section ${sectionNumber}.` }], source: 'not_found' });
 
     } catch (error) {
         console.error("❌ Error in chatbotController:", error.message);
-        return res.status(500).json({ results: [{ title: "❌ सर्वर में समस्या आ रही है। कृपया बाद में प्रयास करें।" }] });
+        return res.status(500).json({ results: [{ title: "❌ Server error. Please try again later." }] });
     }
 };
