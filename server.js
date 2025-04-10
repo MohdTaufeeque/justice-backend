@@ -16,15 +16,15 @@ app.use(cors({
 
 app.use(express.json());
 
-// Routes
+// ✅ Routes
 app.use('/chatbot', chatbotRoutes);
 
-// Root test route
+// ✅ Root test route
 app.get('/', (req, res) => {
     res.send("🚀 Justice Chatbot Backend is Running!");
 });
 
-// Start server
+// ✅ Start server
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });

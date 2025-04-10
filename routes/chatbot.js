@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const chatbotController = require('../controllers/chatbotController'); // ✅ Correct Import
+const chatbotController = require('../controllers/chatbotController');
 
-// ✅ Define the /ask route properly
-router.post('/ask', chatbotController.askQuestion);
+// ✅ Updated route as per your requirement
+router.post('/askQuestion', chatbotController.askQuestion);
 
 module.exports = router;
