@@ -1,8 +1,10 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// Get the latest model name
 const model = genAI.getGenerativeModel({ 
-  model: "gemini-pro",
+  model: "gemini-1.5-pro-latest", // Updated model name
   generationConfig: {
     maxOutputTokens: 2000,
     temperature: 0.9,
@@ -33,8 +35,8 @@ async function askGemini(prompt) {
     
     return response.text();
   } catch (error) {
-    console.error("Gemini Error:", error);
-    return "⚠️ I'm experiencing technical difficulties. Please try again later.";
+    console.error("Gemini Error Details:", error.message, error.stack);
+    return "⚠️ I'm having trouble answering that. Please try again later or ask a different question.";
   }
 }
 
