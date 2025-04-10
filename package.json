@@ -12,6 +12,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google/generative-ai": "^0.24.0",
     "2captcha": "^3.0.5-2",
     "axios": "^1.8.4",
     "cheerio": "^1.0.0",

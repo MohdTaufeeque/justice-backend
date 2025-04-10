@@ -1,32 +1,27 @@
 const ipcData = require('../data/ipc_sections.json');
 const { fetchFromIndianKanoon } = require('../utils/fetchData');
-const axios = require('axios');
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const { askGemini } = require('../utils/gemini'); // ✅ Correct Gemini integration
 
 exports.askQuestion = async (req, res) => {
     try {
-        const question = req.body.question?.trim();
-        if (!question) {
+        if (!req.body.question) {
             return res.status(400).json({ results: [{ title: "❌ Invalid request: No question provided." }] });
         }
 
-        const userQuestion = question.toLowerCase();
+        const userQuestion = req.body.question.toLowerCase();
         console.log("🔹 User Question:", userQuestion);
 
-        // 1. Greetings
+        // Greeting check
         const greetings = ["hi", "hello", "hey", "namaste", "salam"];
         if (greetings.includes(userQuestion)) {
             return res.json({ results: [{ title: "👋 Hello! How may I assist you today?" }], source: 'greeting' });
         }
 
-        // 2. Detect if user is asking about a specific IPC section
-        const sectionMatch = userQuestion.match(/(?:section|धारा)?\s*(\d{1,4})\b/);
-        const sectionNumber = sectionMatch ? sectionMatch[1] : null;
+        // Section number check
+        const sectionNumberMatch = userQuestion.match(/(?:section|धारा)?\s*(\d+)/i);
+        const sectionNumber = sectionNumberMatch ? sectionNumberMatch[1] : null;
 
-        if (sectionNumber && (userQuestion.includes("section") || userQuestion.includes("धारा") || userQuestion.match(/^\d{1,4}$/))) {
-            console.log("🔹 Extracted Section Number:", sectionNumber);
-
+        if (sectionNumber) {
             const ipcSection = ipcData.find(section => section.id === sectionNumber);
             if (ipcSection) {
                 return res.json({
@@ -52,15 +47,9 @@ exports.askQuestion = async (req, res) => {
             return res.json({ results: [{ title: `❌ No information found for Section ${sectionNumber}.` }], source: 'not_found' });
         }
 
-        // 3. Fallback to Gemini for general legal questions
-        console.log("🔁 Forwarding to Gemini API...");
-        const geminiResponse = await axios.post(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
-            { contents: [{ parts: [{ text: userQuestion }] }] }
-        );
-
-        const geminiText = geminiResponse.data.candidates?.[0]?.content?.parts?.[0]?.text || "❌ Gemini could not answer this.";
-        return res.json({ results: [{ title: geminiText }], source: 'gemini' });
+        // ✅ Fallback to Gemini AI for other queries
+        const geminiReply = await askGemini(userQuestion);
+        return res.json({ results: [{ title: geminiReply }], source: 'gemini' });
 
     } catch (error) {
         console.error("❌ Error in chatbotController:", error.message);
