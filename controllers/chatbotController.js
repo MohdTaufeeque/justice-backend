@@ -16,12 +16,16 @@ exports.askQuestion = async (req, res) => {
     const userQuestion = req.body.question.trim().toLowerCase();
     console.log("User Question:", userQuestion);
 
-    // Handle greetings
-    const greetings = ["hi", "hello", "hey", "namaste", "salam"];
-    if (greetings.some(greet => userQuestion.includes(greet))) {
+    // Handle greetings in both English and Hindi
+    const englishGreetings = ["hi", "hello", "hey"];
+    const hindiGreetings = ["namaste", "salam", "pranam"];
+    
+    if ([...englishGreetings, ...hindiGreetings].some(greet => userQuestion.includes(greet))) {
+      const isHindi = hindiGreetings.some(greet => userQuestion.includes(greet));
       return res.json({ 
         results: [{ 
-          title: "👋 Hello! I'm your Justice Assistant. How may I help you today?" 
+          title: isHindi ? "👋 नमस्ते! मैं आपका न्याय सहायक हूँ। मैं आपकी कैसे मदद कर सकता हूँ?" 
+                   : "👋 Hello! I'm your Justice Assistant. How may I help you today?"
         }], 
         source: 'greeting' 
       });
@@ -71,8 +75,15 @@ exports.askQuestion = async (req, res) => {
       });
     }
 
-    // Handle general questions with Gemini
-    const geminiReply = await askGemini(userQuestion);
+    // Handle language detection for Gemini
+    const isHindi = /[\u0900-\u097F]/.test(userQuestion) || 
+                   ["hindi", "हिंदी"].some(word => userQuestion.includes(word));
+
+    const geminiPrompt = isHindi 
+      ? `Answer in Hindi: ${userQuestion}\n\nकृपया हिंदी में उत्तर दें।`
+      : userQuestion;
+
+    const geminiReply = await askGemini(geminiPrompt);
     return res.json({ 
       results: [{ 
         title: geminiReply 

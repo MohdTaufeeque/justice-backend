@@ -1,10 +1,8 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-// Get the latest model name
 const model = genAI.getGenerativeModel({ 
-  model: "gemini-1.5-pro-latest", // Updated model name
+  model: "gemini-1.5-pro-latest",
   generationConfig: {
     maxOutputTokens: 2000,
     temperature: 0.9,
@@ -20,23 +18,25 @@ const model = genAI.getGenerativeModel({
 
 async function askGemini(prompt) {
   try {
-    if (!prompt || prompt.trim() === '') {
-      return "Please ask a valid question.";
-    }
+    if (!prompt.trim()) return "Please ask a valid question.";
 
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-    });
+    // Detect language preference
+    const isHindiRequest = prompt.toLowerCase().includes("hindi") || 
+                         /(हिंदी|हिन्दी)/i.test(prompt);
     
+    const modifiedPrompt = isHindiRequest 
+      ? `${prompt}. कृपया हिंदी में उत्तर दें।`
+      : prompt;
+
+    const result = await model.generateContent(modifiedPrompt);
     const response = await result.response;
-    if (!response || !response.text) {
-      throw new Error("Empty response from Gemini");
-    }
     
+    if (!response?.text()) throw new Error("Empty response");
     return response.text();
+
   } catch (error) {
-    console.error("Gemini Error Details:", error.message, error.stack);
-    return "⚠️ I'm having trouble answering that. Please try again later or ask a different question.";
+    console.error("Gemini Error:", error);
+    return "Technical issue. Please try again later.";
   }
 }
 
