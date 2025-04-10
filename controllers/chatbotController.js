@@ -16,17 +16,15 @@ exports.askQuestion = async (req, res) => {
     const userQuestion = req.body.question.trim();
     console.log("User Question:", userQuestion);
 
-    // Handle greetings in both English and Hindi
+    // Handle greetings - only respond with greeting if message is JUST a greeting
     const englishGreetings = ["hi", "hello", "hey"];
     const hindiGreetings = ["namaste", "namaskar", "salam", "pranam"];
     
-    // Improved Hindi detection
-    const isHindi = /[\u0900-\u097F]/.test(userQuestion) || 
-                   hindiGreetings.some(greet => userQuestion.toLowerCase().includes(greet)) ||
-                   userQuestion.toLowerCase().includes('हिंदी') || 
-                   userQuestion.toLowerCase().includes('hindi');
+    const isPureGreeting = [...englishGreetings, ...hindiGreetings]
+      .some(greet => userQuestion.toLowerCase() === greet);
 
-    if ([...englishGreetings, ...hindiGreetings].some(greet => userQuestion.toLowerCase().includes(greet))) {
+    if (isPureGreeting) {
+      const isHindi = hindiGreetings.some(greet => userQuestion.toLowerCase() === greet);
       return res.json({ 
         results: [{ 
           title: isHindi ? "👋 नमस्ते! मैं आपका न्याय सहायक हूँ। मैं आपकी कैसे मदद कर सकता हूँ?" 
@@ -35,6 +33,13 @@ exports.askQuestion = async (req, res) => {
         source: 'greeting' 
       });
     }
+
+    // Improved Hindi detection for substantive questions
+    const isHindi = /[\u0900-\u097F]/.test(userQuestion) || 
+                   userQuestion.toLowerCase().includes('हिंदी') || 
+                   userQuestion.toLowerCase().includes('hindi') ||
+                   (hindiGreetings.some(greet => userQuestion.toLowerCase().includes(greet)) && 
+                    userQuestion.length > 8); // Only consider as Hindi if it's more than just a greeting
 
     // Handle section queries
     const sectionNumberMatch = userQuestion.match(/(?:section|धारा|सेक्शन)?\s*(\d+)/i);
@@ -83,10 +88,11 @@ exports.askQuestion = async (req, res) => {
     }
 
     // Handle all other queries with Gemini
-    const geminiReply = await askGemini(isHindi ? 
-      `कृपया हिंदी में उत्तर दें: ${userQuestion}` : 
-      userQuestion);
+    const geminiPrompt = isHindi ? 
+      `कृपया हिंदी में संक्षिप्त और सरल उत्तर दें: ${userQuestion}` : 
+      `Please answer briefly and simply: ${userQuestion}`;
       
+    const geminiReply = await askGemini(geminiPrompt);
     return res.json({ 
       results: [{ 
         title: geminiReply 
